@@ -103,33 +103,47 @@ pip install -r requirements.txt
 
 ### 4. 配置环境变量
 
-复制 `.env.example` 为 `.env`，并填入你自己的数据库密码与密钥：
-
-
+先复制模板，生成实际使用的 `.env` 文件（该文件已被 `.gitignore` 忽略，不会上传）：
 
 ```
 Copy-Item .env.example .env
 ```
 
-`.env` 示例：
+然后用编辑器打开根目录下的 **`.env`** 文件，对照下表逐行修改。`.env` 与 `.env.example` 行号一致，共需修改 4 处：
 
+| 行号 | 配置项 | 原值（占位） | 需要改成什么 |
+|------|--------|--------------|--------------|
+| 第 3 行 | `SECRET_KEY` | `replace-with-a-random-secret-key` | Flask 会话加密密钥，改成一段随机字符串 |
+| 第 5 行 | `FLASK_DEBUG` | `1` | 本地调试保持 `1`；正式部署改成 `0` |
+| 第 9 行 | `DATABASE_URL` | `...root:your-password@localhost...` | 数据库连接串，把 `your-password` 改成你本机 MySQL 的真实密码 |
+| 第 13 行 | `JWT_SECRET_KEY` | `replace-with-a-random-jwt-secret` | JWT 签名密钥，改成一段随机字符串（建议 32 位以上） |
 
+逐项说明：
+
+- **第 3 行 `SECRET_KEY`**：用于 Flask 会话等加密，把等号后面整段替换为随机字符串，例如：
 
 ```
-SECRET\_KEY=替换为随机字符串
-
-FLASK\_DEBUG=1
-
-DATABASE\_URL=mysql+pymysql://root:你的密码@localhost:3306/blog\_db?charset=utf8mb4
-
-JWT\_SECRET\_KEY=替换为随机字符串
+SECRET_KEY=9f2c1a7e8b6d4f3a0c5e2b9d1f7a4c6e8b0d3f2a1c5e7b9d0f3a6c8e2b4d1f7
 ```
 
-> 密钥可用 
->
-> `python -c "import secrets;print(secrets.token_hex(32))"`
->
->  生成。
+- **第 5 行 `FLASK_DEBUG`**：控制调试模式，`1` 为开启（本地开发，出错会显示详细信息），`0` 为关闭（正式环境）。
+
+- **第 9 行 `DATABASE_URL`**：数据库连接串，各部分含义如下，只需把密码部分替换为真实密码，其余与本机 MySQL 保持一致：
+
+```
+mysql+pymysql://root:your-password@localhost:3306/blog_db?charset=utf8mb4
+                 用户名   密码             主机        端口   数据库名
+```
+
+各部分说明：`root` 是 MySQL 用户名（默认 `root`）；`your-password` 改成你自己的 MySQL 密码；`localhost:3306` 是数据库地址和端口（本地默认）；`blog_db` 是数据库名（需与第 5 步创建的一致）。
+
+- **第 13 行 `JWT_SECRET_KEY`**：用于签发登录 Token，和 `SECRET_KEY` 一样替换为随机字符串，建议两个密钥使用不同的值。
+
+随机密钥可用下面命令生成（在已激活虚拟环境的终端中运行，会输出一串 64 位字符）：
+
+```
+python -c "import secrets;print(secrets.token_hex(32))"
+```
 
 ### 5. 创建数据库
 
