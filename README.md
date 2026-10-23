@@ -64,6 +64,12 @@ flask\_project\_1/
 
 ├── requirements.txt         # 依赖清单
 
+├── Dockerfile               # Flask API 镜像构建文件
+
+├── docker-compose.yml       # 一键启动 Flask + MySQL
+
+├── .dockerignore            # Docker 构建忽略文件
+
 ├── .env.example             # 环境变量模板
 
 └── LICENSE                  # MIT 许可证
@@ -71,7 +77,113 @@ flask\_project\_1/
 
 ## 快速开始
 
-### 1. 环境要求
+### Docker 一键启动（推荐）
+
+#### 环境要求
+
+* Docker Desktop / Docker Engine（需支持 Compose 插件）
+
+#### 启动服务
+
+在项目根目录执行：
+
+```bash
+docker compose up -d --build
+```
+
+如果你的网络环境无法直接访问 Docker Hub，可使用镜像源构建：
+
+```bash
+PYTHON_IMAGE=docker.m.daocloud.io/library/python:3.12-slim `
+MYSQL_IMAGE=docker.m.daocloud.io/library/mysql:8.0 `
+docker compose up -d --build
+```
+
+PowerShell 中也可以先设置环境变量：
+
+```powershell
+$env:PYTHON_IMAGE="docker.m.daocloud.io/library/python:3.12-slim"
+$env:MYSQL_IMAGE="docker.m.daocloud.io/library/mysql:8.0"
+docker compose up -d --build
+```
+
+首次启动会自动完成以下工作：
+
+* 拉取并启动 MySQL 8.0（容器内使用 3306，宿主机默认映射到 3307，避免与本机 MySQL 冲突）
+* 构建 Flask API 镜像
+* 创建 `blog_db` 数据库
+* 启动 Flask 服务
+* 根据 SQLAlchemy 模型自动创建数据表
+
+启动成功后访问：
+
+```text
+http://localhost:5000/health
+```
+
+看到以下响应即表示服务正常：
+
+```json
+{"code":200,"message":"success","data":{"status":"ok"}}
+```
+
+#### 自定义配置（可选）
+
+Docker Compose 已提供可直接运行的默认配置，适合本地快速体验。若需要修改端口、数据库账号或密钥，可在项目根目录创建 `.env` 文件，例如：
+
+```env
+WEB_PORT=5000
+MYSQL_PORT=3307
+MYSQL_DATABASE=blog_db
+MYSQL_USER=blog_user
+MYSQL_PASSWORD=blog_password
+MYSQL_ROOT_PASSWORD=root_password
+SECRET_KEY=replace-with-a-random-secret-key
+JWT_SECRET_KEY=replace-with-a-random-jwt-secret
+FLASK_DEBUG=0
+```
+
+> 注意：`.env` 已在 `.gitignore` 中忽略，不会被提交。生产环境请务必替换所有默认密码和密钥。
+
+#### 查看日志
+
+```bash
+docker compose logs -f web
+```
+
+#### 停止服务
+
+```bash
+docker compose down
+```
+
+如需同时删除 MySQL 数据卷：
+
+```bash
+docker compose down -v
+```
+
+#### 单独构建镜像
+
+如果只想构建 Flask API 镜像：
+
+```bash
+docker build -t flask-blog-api .
+```
+
+单独运行容器时，需要通过环境变量指定数据库连接：
+
+```bash
+docker run -d -p 5000:5000 \
+  -e SECRET_KEY=replace-with-a-random-secret-key \
+  -e JWT_SECRET_KEY=replace-with-a-random-jwt-secret \
+  -e DATABASE_URL=mysql+pymysql://blog_user:blog_password@数据库主机:3306/blog_db?charset=utf8mb4 \
+  flask-blog-api
+```
+
+### 本地 Python 环境运行
+
+#### 1. 环境要求
 
 
 
@@ -79,7 +191,7 @@ flask\_project\_1/
 
 * MySQL 8.0+
 
-### 2. 克隆项目
+#### 2. 克隆项目
 
 
 
@@ -89,7 +201,7 @@ git clone https://github.com/LiTaowei/flask-blog-api.git
 cd flask-blog-api
 ```
 
-### 3. 创建虚拟环境并安装依赖
+#### 3. 创建虚拟环境并安装依赖
 
 
 
@@ -101,7 +213,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-### 4. 配置环境变量
+#### 4. 配置环境变量
 
 先复制模板，生成实际使用的 `.env` 文件（该文件已被 `.gitignore` 忽略，不会上传）：
 
@@ -145,7 +257,7 @@ mysql+pymysql://root:your-password@localhost:3306/blog_db?charset=utf8mb4
 python -c "import secrets;print(secrets.token_hex(32))"
 ```
 
-### 5. 创建数据库
+#### 5. 创建数据库
 
 应用会自动建表，但需先手动创建数据库（字符集 utf8mb4）：
 
@@ -155,7 +267,7 @@ python -c "import secrets;print(secrets.token_hex(32))"
 CREATE DATABASE blog\_db CHARACTER SET utf8mb4 COLLATE utf8mb4\_unicode\_ci;
 ```
 
-### 6. 启动服务
+#### 6. 启动服务
 
 
 
