@@ -1,5 +1,5 @@
 """应用工厂：创建并配置 Flask 应用实例"""
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_sqlalchemy import SQLAlchemy
@@ -18,6 +18,10 @@ def create_app(config_class=Config):
     db.init_app(app)
     jwt.init_app(app)
     CORS(app)  # 允许跨域，便于前端/Postman 调试
+
+    @app.get("/health")
+    def health_check():
+        return jsonify(code=200, message="success", data={"status": "ok"})
 
     # 注册蓝图
     from app.routes.auth import auth_bp
